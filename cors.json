@@ -1,0 +1,11 @@
+[
+  {
+    "origin": [
+      "https://firebase-poster.vercel.app",
+      "https://hanashi-writer-app.vercel.app"
+    ],
+    "method": ["GET", "POST", "PUT"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type"]
+  }
+]
