@@ -1,8 +1,9 @@
 [
   {
     "origin": [
-      "https://firebase-poster.vercel.app",
-      "https://hanashi-writer-app.vercel.app"
+      "http://localhost:3000",                    // for local testing
+      "https://hanashi-writer-app.vercel.app",    // your writer dashboard
+      "https://firebase-poster.vercel.app"        // your other frontend
     ],
     "method": ["GET", "POST", "PUT"],
     "maxAgeSeconds": 3600,
