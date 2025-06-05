@@ -6,35 +6,39 @@ import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "next/router";
 
 export default function AddBook() {
-  console.log("AddBook mounted")
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [tag, setTag] = useState("");
   const [coverFile, setCoverFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [notification, setNotification] = useState(null); // { type: 'success' | 'error', message: string }
+
   const router = useRouter();
 
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
 
   const handlePost = async () => {
-    console.log("Uploading file:", coverFile); // already added
-    console.log("About to upload...");         // before uploadBytes()
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      showNotification("error", "Title is required.");
+      return;
+    }
 
     setIsUploading(true);
 
     try {
       let coverImageUrl = "";
 
-      console.log("Uploading file:", coverFile);
-
       if (coverFile) {
         const uniqueFileName = `covers/${uuidv4()}`;
         const fileRef = ref(storage, uniqueFileName);
         const snapshot = await uploadBytes(fileRef, coverFile);
-        console.log("Upload successful, getting download URL...");
         coverImageUrl = await getDownloadURL(snapshot.ref);
-        console.log("Image URL:", coverImageUrl);
       }
 
       const newDocRef = await addDoc(collection(db, "stories"), {
@@ -47,29 +51,42 @@ export default function AddBook() {
         createdAt: serverTimestamp(),
       });
 
-      router.push(`/writerDashboard/${newDocRef.id}`);
+      showNotification("success", "Uploaded!");
+      setTimeout(() => router.push(`/writerDashboard/${newDocRef.id}`), 1000);
 
     } catch (error) {
       console.error("Error posting:", error);
-      alert("Something went wrong.");
+      showNotification("error", `Failed: ${error.message}`);
     } finally {
       setIsUploading(false);
     }
-    
   };
 
   const handleImageChange = (e) => {
-    
     const file = e.target.files?.[0];
     if (file) {
       setCoverFile(file);
       setPreviewUrl(URL.createObjectURL(file));
-      console.log("Selected file:", file);
     }
   };
 
   return (
-    <main style={{ padding: "2rem", maxWidth: "600px" }}>
+    <main style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto" }}>
+      {notification && (
+        <div
+          style={{
+            padding: "1rem",
+            borderRadius: "8px",
+            marginBottom: "1.5rem",
+            color: notification.type === "success" ? "#155724" : "#721c24",
+            backgroundColor: notification.type === "success" ? "#d4edda" : "#f8d7da",
+            border: `1px solid ${notification.type === "success" ? "#c3e6cb" : "#f5c6cb"}`,
+          }}
+        >
+          {notification.message}
+        </div>
+      )}
+
       <h1>Add a New Book</h1>
 
       <input
@@ -110,21 +127,47 @@ export default function AddBook() {
 
       {previewUrl && (
         <div style={{ marginBottom: "1rem" }}>
-          <img src={previewUrl} alt="Preview" style={{ maxWidth: "100%", borderRadius: "8px" }} />
+          <img
+            src={previewUrl}
+            alt="Preview"
+            style={{ maxWidth: "100%", borderRadius: "8px" }}
+          />
         </div>
       )}
 
-      <button
-        onClick={(e) => {
-          e.preventDefault(); // 🔥 prevent the reload
-          console.log("Post button clicked!");
-          handlePost();
-        }}
-        disabled={isUploading}
-        style={{ padding: "0.5rem 1rem" }}
-      >
-        {isUploading ? "Uploading..." : "Post"}
-      </button>
+      <div style={{ display: "flex", gap: "1rem" }}>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            handlePost();
+          }}
+          disabled={isUploading}
+          style={{
+            padding: "0.5rem 1rem",
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: isUploading ? "not-allowed" : "pointer",
+          }}
+        >
+          {isUploading ? "Uploading..." : "Post"}
+        </button>
+
+        <button
+          onClick={() => router.push("/writerDashboard")}
+          style={{
+            padding: "0.5rem 1rem",
+            backgroundColor: "#6c757d",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          Go Back
+        </button>
+      </div>
     </main>
   );
 }
